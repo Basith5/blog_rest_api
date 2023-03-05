@@ -89,34 +89,7 @@ app.get('/readBlog/:id', async (req, res) => {
   }
 });
 ///////////////////////////////////////////////////////////////////////////
-//updating data in the blog table
-app.patch('/editBlog/:id', async (req: Request, res: Response) => {
-  try {
-    const { blogTitle, shortDescription, blogCategory, richText } = Schema.pick({
-      blogTitle: true,
-      shortDescription: true,
-      blogCategory: true,
-      richText: true,
-    }).parse(req.body);
-
-    // // Sanitize richText before updating database
-    // const sanitizedRichText = sanitizeHtml(richText);
-
-    const [result] = await pool.query(
-      'UPDATE blog SET blogTitle=?, shortDescription=?, blogCategory=?, richText=? WHERE id=?',
-      [blogTitle, shortDescription, blogCategory, richText, req.params.id]
-    );
-
-    if ((result as OkPacket).affectedRows === 0) {
-      res.status(404).json({ error: 'Data not found' });
-    } else {
-      res.status(200).json({ msg: 'success' });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Something went wrong' });
-  }
-});
+//update in progress.....
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //delete a blog post from the database
 app.delete('/deleteBlog/:id', async (req: Request, res: Response) => {
