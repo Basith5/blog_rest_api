@@ -49,18 +49,44 @@ app.post('/addblog', upload.single('img_micro'), async (req: Request, res: Respo
     // Get the filename of the uploaded image and save to database
     const img_micro = req.file ? req.file.filename : '';
 
+    app.post('/addblog', upload.single('img_micro'), async (req: Request, res: Response) => {
+      try {
+        // Validate request body using the schema
+        const { blogTitle, shortDescription, blogCategory, richText } = blogSchema.parse(req.body);
+    
+        // Sanitize richText field
+        const sanitizedRichText = sanitizeHtml(richText);
+    
+        // Get the filename of the uploaded image and save to database
+        const img_micro = req.file ? req.file.filename : '';
+    
+    
+    
+        // Insert data into MySQL database
+        const [result] = await pool.query(
+          'INSERT INTO blog (blogTitle, shortDescription, blogCategory, richText, img_micro) VALUES (?, ?, ?, ?, ?)',
+          [blogTitle, shortDescription, blogCategory, sanitizedRichText, img_micro]
+        );
+    
+        res.status(201).json({ id: (result as OkPacket).insertId, message: 'Blog post created successfully' });
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Something went wrong' });
+      }
+    });
     // Insert data into MySQL database
     const [result] = await pool.query(
       'INSERT INTO blog (blogTitle, shortDescription, blogCategory, richText, img_micro) VALUES (?, ?, ?, ?, ?)',
       [blogTitle, shortDescription, blogCategory, sanitizedRichText, img_micro]
     );
 
-    res.status(201).json({ id: (result as mysql.OkPacket).insertId, message: 'Blog post created successfully' });
+    res.status(201).json({ id: (result as OkPacket).insertId, message: 'Blog post created successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Something went wrong' });
   }
 });
+
 ///////////////////////////////////////////////////////////////////////////
 // //adding data to the blog table
 // app.post('/addblog', async (req: Request, res: Response) => {
