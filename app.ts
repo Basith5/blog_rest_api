@@ -28,6 +28,7 @@ const Schema = z.object({
   shortDescription: z.string().max(40).optional(),
   blogCategory: z.string().optional(),
   richText: z.string().optional(),
+  img_micro: z.string().optional(),
 });
 ////////////////////////////////////////
 //schema for the request body using Zod
@@ -36,6 +37,7 @@ const blogSchema = z.object({
   shortDescription: z.string().max(40),
   blogCategory: z.string().min(1),
   richText: z.string().min(1),
+  img_micro: z.string().optional(),
 });
 //////////////////////////////////////////////////////////////////////////////
 app.post('/addblog', upload.single('img_micro'), async (req: Request, res: Response) => {
@@ -164,22 +166,28 @@ app.get('/readBlog/:id', async (req, res) => {
 //   }
 // });
 ///////////////////////////////////////////////////////////////////////////
-app.patch('/editBlog/:id', upload.single('img_micro'), async (req: Request, res: Response) => {
+app.patch('/editBlog/:id', async (req: Request, res: Response) => {
   try {
-    const { blogTitle, shortDescription, blogCategory, richText } = Schema.pick({
-      blogTitle: true,
-      shortDescription: true,
-      blogCategory: true,
-      richText: true,
-    }).parse(req.body);
+    let columnToUpdate;
+    if (req.body.blogTitle) {
+      columnToUpdate = 'blogTitle';
+    } else if (req.body.shortDescription) {
+      columnToUpdate = 'shortDescription';
+    } else if (req.body.blogCategory) {
+      columnToUpdate = 'blogCategory';
+    } else if (req.body.richText) {
+      columnToUpdate = 'richText';
+    } else {
+      res.status(400).json({ error: 'No valid column found to update' });
+      return;
+    }
 
-    // Get the filename of the uploaded image and save to database
-    const img_micro = req.file ? req.file.filename : '';
+    const valueToUpdate = req.body[columnToUpdate];
 
     // Update data in MySQL database
     const [result] = await pool.query(
-      'UPDATE blog SET blogTitle=?, shortDescription=?, blogCategory=?, richText=?, img_micro=? WHERE id=?',
-      [blogTitle, shortDescription, blogCategory, richText, img_micro, req.params.id]
+      `UPDATE blog SET ${columnToUpdate}=? WHERE id=?`,
+      [valueToUpdate, req.params.id]
     );
 
     if ((result as OkPacket).affectedRows === 0) {
@@ -192,6 +200,36 @@ app.patch('/editBlog/:id', upload.single('img_micro'), async (req: Request, res:
     res.status(500).json({ error: 'Something went wrong' });
   }
 });
+
+///////////////////////////////////////////////////////////////////////////
+// app.patch('/editBlog/:id', upload.single('img_micro'), async (req: Request, res: Response) => {
+//   try {
+//     const { blogTitle, shortDescription, blogCategory, richText } = Schema.pick({
+//       blogTitle: true,
+//       shortDescription: true,
+//       blogCategory: true,
+//       richText: true,
+//     }).parse(req.body);
+
+//     // Get the filename of the uploaded image and save to database
+//     const img_micro = req.file ? req.file.filename : '';
+
+//     // Update data in MySQL database
+//     const [result] = await pool.query(
+//       'UPDATE blog SET blogTitle=?, shortDescription=?, blogCategory=?, richText=?, img_micro=? WHERE id=?',
+//       [blogTitle, shortDescription, blogCategory, richText, img_micro, req.params.id]
+//     );
+
+//     if ((result as OkPacket).affectedRows === 0) {
+//       res.status(404).json({ error: 'Data not found' });
+//     } else {
+//       res.status(200).json({ msg: 'success' });
+//     }
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: 'Something went wrong' });
+//   }
+// });
 
 ///////////////////////////////////////////////////////////////////////////
 // //updating data in the blog table
